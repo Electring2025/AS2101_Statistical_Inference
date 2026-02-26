@@ -1,0 +1,37 @@
+======================================================================
+STATISTICAL ANALYSIS SUMMARY
+======================================================================
+Source CSV : .\Flight New and standard.csv
+Columns   : ['Flight Time(New)\r\nBattery B', 'Flight Time (Standard)\r\nBattery A']
+Data pts  : 30
+
+Flight Time(New)
+Battery B:
+  Sample size (n)              : 30
+  Mean (x-bar)                 : 33.386667
+  Standard Deviation (s)       : 0.258288
+  Standard Error of Mean (SEM) : 0.047157
+  t-critical (95% CI)          : 2.045230
+  Error Bar (+-)               : 0.096446
+  95% CI                       : [33.290220, 33.483113]
+
+Flight Time (Standard)
+Battery A:
+  Sample size (n)              : 30
+  Mean (x-bar)                 : 32.100000
+  Standard Deviation (s)       : 0.271649
+  Standard Error of Mean (SEM) : 0.049596
+  t-critical (95% CI)          : 2.045230
+  Error Bar (+-)               : 0.101435
+  95% CI                       : [31.998565, 32.201435]
+
+======================================================================
+Synthetic data: 1000 points per column (Normal distribution)
+======================================================================
+
+Output files in this folder:
+  scatter_plot.png      - Scatter plot (original + synthetic)
+  candlestick_plot.png  - Candlestick plot with error bars
+  latex_output.tex      - LaTeX formatted report
+  synthetic.csv         - 1000 synthetic data points
+  summary.txt           - This file

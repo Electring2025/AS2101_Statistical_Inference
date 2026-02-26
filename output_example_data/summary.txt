@@ -1,0 +1,35 @@
+======================================================================
+STATISTICAL ANALYSIS SUMMARY
+======================================================================
+Source CSV : example_data.csv
+Columns   : ['Voltage', 'Current']
+Data pts  : 30
+
+Voltage:
+  Sample size (n)              : 30
+  Mean (x-bar)                 : 5.072000
+  Standard Deviation (s)       : 0.184996
+  Standard Error of Mean (SEM) : 0.033775
+  t-critical (95% CI)          : 2.045230
+  Error Bar (+-)               : 0.069079
+  95% CI                       : [5.002921, 5.141079]
+
+Current:
+  Sample size (n)              : 30
+  Mean (x-bar)                 : 2.531667
+  Standard Deviation (s)       : 0.093110
+  Standard Error of Mean (SEM) : 0.017000
+  t-critical (95% CI)          : 2.045230
+  Error Bar (+-)               : 0.034768
+  95% CI                       : [2.496899, 2.566435]
+
+======================================================================
+Synthetic data: 1000 points per column (Normal distribution)
+======================================================================
+
+Output files in this folder:
+  scatter_plot.png      - Scatter plot (original + synthetic)
+  candlestick_plot.png  - Candlestick plot with error bars
+  latex_output.tex      - LaTeX formatted report
+  synthetic.csv         - 1000 synthetic data points
+  summary.txt           - This file
