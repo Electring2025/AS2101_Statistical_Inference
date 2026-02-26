@@ -8,36 +8,22 @@ from pathlib import Path
 
 
 class StatisticalAnalyzer:
-    """
-    A class to perform statistical analysis on CSV data with 2 columns.
-    Calculates mean, std dev, SEM, 95% CI, generates synthetic data,
-    and creates visualizations.
-    """
 
     def __init__(self, csv_file):
-        """Initialize with CSV file path."""
         self.csv_file = csv_file
         self.data = None
         self.column_names = []
         self.statistics = {}
         self.synthetic_data = {}
-
-        # Create output folder based on input CSV name
         self.output_dir = self._create_output_folder()
 
     def _create_output_folder(self):
-        """Create output folder named 'output_<csv_name_without_extension>'."""
-        # Get CSV filename without extension
-        csv_name = Path(self.csv_file).stem  # Gets filename without extension
+        csv_name = Path(self.csv_file).stem
         output_folder = f"output_{csv_name}"
-
-        # Create folder if it doesn't exist
         Path(output_folder).mkdir(exist_ok=True)
-
         return output_folder
 
     def load_data(self):
-        """Load CSV data."""
         try:
             self.data = pd.read_csv(self.csv_file)
             if len(self.data.columns) != 2:
@@ -52,23 +38,19 @@ class StatisticalAnalyzer:
             return False
 
     def calculate_statistics(self):
-        """Calculate mean, std dev, SEM, and 95% CI for both columns."""
         for col in self.column_names:
             values = self.data[col].dropna()
             n = len(values)
 
-            # Calculate basic statistics
             mean = np.mean(values)
-            std_dev = np.std(values, ddof=1)  # Sample standard deviation
-            sem = std_dev / np.sqrt(n)  # Standard Error of Mean
+            std_dev = np.std(values, ddof=1)
+            sem = std_dev / np.sqrt(n)
 
-            # Calculate 95% confidence interval using Student's t-distribution
             confidence_level = 0.95
             alpha = 1 - confidence_level
-            df = n - 1  # degrees of freedom
-            t_critical = stats.t.ppf(1 - alpha/2, df)
+            df = n - 1
+            t_critical = stats.t.ppf(1 - alpha / 2, df)
 
-            # Error bar (half-width of CI)
             error_bar = t_critical * sem
             ci_lower = mean - error_bar
             ci_upper = mean + error_bar
@@ -87,23 +69,25 @@ class StatisticalAnalyzer:
         return self.statistics
 
     def generate_synthetic_data(self, n_points=1000):
-        """Generate synthetic data points using normal distribution."""
         for col in self.column_names:
             mean = self.statistics[col]['mean']
             std_dev = self.statistics[col]['std_dev']
-
-            # Generate synthetic data from normal distribution
             synthetic = np.random.normal(mean, std_dev, n_points)
             self.synthetic_data[col] = synthetic
 
         print(f"\nGenerated {n_points} synthetic data points for each column")
+
+        synthetic_df = pd.DataFrame(self.synthetic_data)
+        synthetic_file = os.path.join(self.output_dir, 'synthetic.csv')
+        synthetic_df.to_csv(synthetic_file, index=False)
+        print(f"Synthetic data saved to: {synthetic_file}")
+
         return self.synthetic_data
 
     def print_statistics(self):
-        """Print statistics in a formatted way."""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("STATISTICAL ANALYSIS RESULTS")
-        print("="*70)
+        print("=" * 70)
 
         for col in self.column_names:
             stats_dict = self.statistics[col]
@@ -116,10 +100,9 @@ class StatisticalAnalyzer:
             print(f"  Error Bar (+-):               {stats_dict['error_bar']:.6f}")
             print(f"  95% CI:                       [{stats_dict['ci_lower']:.6f}, {stats_dict['ci_upper']:.6f}]")
 
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
 
     def generate_latex_output(self, output_file='latex_output.tex'):
-        """Generate LaTeX formatted output for the statistics."""
         output_file = os.path.join(self.output_dir, output_file)
 
         latex_content = r"""\documentclass{article}
@@ -140,7 +123,6 @@ class StatisticalAnalyzer:
 
 """
 
-        # Add statistics table
         latex_content += r"""\begin{table}[h]
 \centering
 \caption{Statistical Analysis Results}
@@ -150,7 +132,6 @@ Statistic & """ + self.column_names[0] + r""" & """ + self.column_names[1] + r""
 \midrule
 """
 
-        # Add rows
         latex_content += f"Sample size ($n$) & {self.statistics[self.column_names[0]]['n']} & {self.statistics[self.column_names[1]]['n']} \\\\\n"
         latex_content += f"Mean ($\\bar{{x}}$) & {self.statistics[self.column_names[0]]['mean']:.6f} & {self.statistics[self.column_names[1]]['mean']:.6f} \\\\\n"
         latex_content += f"Std. Deviation ($s$) & {self.statistics[self.column_names[0]]['std_dev']:.6f} & {self.statistics[self.column_names[1]]['std_dev']:.6f} \\\\\n"
@@ -164,7 +145,6 @@ Statistic & """ + self.column_names[0] + r""" & """ + self.column_names[1] + r""
 
 """
 
-        # Add confidence intervals
         latex_content += r"""\section{95\% Confidence Intervals}
 
 """
@@ -198,7 +178,6 @@ $$\text{CI} = \bar{x} \pm \text{Error Bar}$$
 \end{document}
 """
 
-        # Write to file
         with open(output_file, 'w') as f:
             f.write(latex_content)
 
@@ -206,46 +185,41 @@ $$\text{CI} = \bar{x} \pm \text{Error Bar}$$
         return latex_content
 
     def create_scatter_plot(self, output_file='scatter_plot.png', show_synthetic=True, dpi=300):
-        """Create scatter plot with error bars."""
         output_file = os.path.join(self.output_dir, output_file)
 
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
 
         col_x, col_y = self.column_names
 
-        # Left plot: Original data
         ax1.scatter(self.data[col_x], self.data[col_y], alpha=0.6, s=50,
-                   label='Original Data', color='blue', edgecolors='black', linewidth=0.5)
+                    label='Original Data', color='blue', edgecolors='black', linewidth=0.5)
 
-        # Add error bars at mean position
         mean_x = self.statistics[col_x]['mean']
         mean_y = self.statistics[col_y]['mean']
         error_x = self.statistics[col_x]['error_bar']
         error_y = self.statistics[col_y]['error_bar']
 
         ax1.errorbar(mean_x, mean_y, xerr=error_x, yerr=error_y,
-                    fmt='rs', markersize=10, capsize=5, capthick=2,
-                    label='Mean ± 95% CI', linewidth=2)
+                     fmt='rs', markersize=10, capsize=5, capthick=2,
+                     label='Mean +- 95% CI', linewidth=2)
 
-        ax1.set_xlabel(f'{col_x}', fontsize=12, fontweight='bold')
-        ax1.set_ylabel(f'{col_y}', fontsize=12, fontweight='bold')
+        ax1.set_xlabel(f'{col_x} (minutes)', fontsize=12, fontweight='bold')
+        ax1.set_ylabel(f'{col_y} (minutes)', fontsize=12, fontweight='bold')
         ax1.set_title('Original Data with Error Bars', fontsize=14, fontweight='bold')
         ax1.legend()
         ax1.grid(True, alpha=0.3)
 
-        # Right plot: Synthetic data
         if show_synthetic and self.synthetic_data:
             ax2.scatter(self.synthetic_data[col_x], self.synthetic_data[col_y],
-                       alpha=0.3, s=20, label='Synthetic Data (n=1000)',
-                       color='green', edgecolors='none')
+                        alpha=0.3, s=20, label='Synthetic Data (n=1000)',
+                        color='green', edgecolors='none')
 
-            # Add mean with error bars
             ax2.errorbar(mean_x, mean_y, xerr=error_x, yerr=error_y,
-                        fmt='rs', markersize=10, capsize=5, capthick=2,
-                        label='Mean ± 95% CI', linewidth=2)
+                         fmt='rs', markersize=10, capsize=5, capthick=2,
+                         label='Mean +- 95% CI', linewidth=2)
 
-            ax2.set_xlabel(f'{col_x}', fontsize=12, fontweight='bold')
-            ax2.set_ylabel(f'{col_y}', fontsize=12, fontweight='bold')
+            ax2.set_xlabel(f'{col_x} (minutes)', fontsize=12, fontweight='bold')
+            ax2.set_ylabel(f'{col_y} (minutes)', fontsize=12, fontweight='bold')
             ax2.set_title('Synthetic Data with Error Bars', fontsize=14, fontweight='bold')
             ax2.legend()
             ax2.grid(True, alpha=0.3)
@@ -256,7 +230,6 @@ $$\text{CI} = \bar{x} \pm \text{Error Bar}$$
         plt.close()
 
     def create_candlestick_plot(self, output_file='candlestick_plot.png', dpi=300):
-        """Create candlestick-style plot with error bars for both columns."""
         output_file = os.path.join(self.output_dir, output_file)
 
         fig, ax = plt.subplots(figsize=(10, 8))
@@ -272,26 +245,21 @@ $$\text{CI} = \bar{x} \pm \text{Error Bar}$$
             ci_lower = stats_dict['ci_lower']
             ci_upper = stats_dict['ci_upper']
 
-            # Draw the box (representing ±1 std dev from mean)
             box_bottom = mean - std
             box_top = mean + std
             box_height = 2 * std
 
-            # Create box
             box = plt.Rectangle((positions[i] - 0.3, box_bottom), 0.6, box_height,
-                               facecolor=colors[i], alpha=0.6, edgecolor='black', linewidth=2)
+                                facecolor=colors[i], alpha=0.6, edgecolor='black', linewidth=2)
             ax.add_patch(box)
 
-            # Draw mean line
             ax.plot([positions[i] - 0.3, positions[i] + 0.3], [mean, mean],
-                   'k-', linewidth=3, label='Mean' if i == 0 else '')
+                    'k-', linewidth=3, label='Mean' if i == 0 else '')
 
-            # Draw error bars (95% CI)
             ax.errorbar(positions[i], mean, yerr=error, fmt='none',
-                       color='darkred', capsize=10, capthick=3, linewidth=3,
-                       label='95% CI' if i == 0 else '')
+                        color='darkred', capsize=10, capthick=3, linewidth=3,
+                        label='95% CI' if i == 0 else '')
 
-            # Draw whiskers (min/max of data)
             data_min = self.data[col].min()
             data_max = self.data[col].max()
             ax.plot([positions[i], positions[i]], [box_top, data_max], 'k-', linewidth=1.5)
@@ -299,26 +267,24 @@ $$\text{CI} = \bar{x} \pm \text{Error Bar}$$
             ax.plot([positions[i] - 0.15, positions[i] + 0.15], [data_max, data_max], 'k-', linewidth=1.5)
             ax.plot([positions[i] - 0.15, positions[i] + 0.15], [data_min, data_min], 'k-', linewidth=1.5)
 
-            # Add text annotations
             ax.text(positions[i], mean, f'{mean:.3f}',
-                   ha='center', va='bottom', fontsize=9, fontweight='bold')
+                    ha='center', va='bottom', fontsize=9, fontweight='bold')
             ax.text(positions[i] + 0.35, ci_upper, f'{ci_upper:.3f}',
-                   ha='left', va='center', fontsize=8, color='darkred')
+                    ha='left', va='center', fontsize=8, color='darkred')
             ax.text(positions[i] + 0.35, ci_lower, f'{ci_lower:.3f}',
-                   ha='left', va='center', fontsize=8, color='darkred')
+                    ha='left', va='center', fontsize=8, color='darkred')
 
         ax.set_xticks(positions)
-        ax.set_xticklabels(self.column_names, fontsize=12, fontweight='bold')
-        ax.set_ylabel('Value', fontsize=12, fontweight='bold')
+        ax.set_xticklabels([f'{name} (minutes)' for name in self.column_names], fontsize=12, fontweight='bold')
+        ax.set_ylabel('Value (minutes)', fontsize=12, fontweight='bold')
         ax.set_title('Candlestick Plot with 95% CI Error Bars', fontsize=14, fontweight='bold')
         ax.grid(True, alpha=0.3, axis='y')
         ax.legend(loc='best', fontsize=10)
 
-        # Add text box with statistics
-        textstr = 'Box: Mean ± 1 SD\nWhiskers: Min/Max\nError bars: 95% CI'
+        textstr = 'Box: Mean +- 1 SD\nWhiskers: Min/Max\nError bars: 95% CI'
         props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
         ax.text(0.02, 0.98, textstr, transform=ax.transAxes, fontsize=10,
-               verticalalignment='top', bbox=props)
+                verticalalignment='top', bbox=props)
 
         plt.tight_layout()
         plt.savefig(output_file, dpi=dpi, bbox_inches='tight')
@@ -326,7 +292,6 @@ $$\text{CI} = \bar{x} \pm \text{Error Bar}$$
         plt.close()
 
     def save_text_summary(self, output_file='summary.txt'):
-        """Save a plain-text summary of the analysis into the output folder."""
         output_file = os.path.join(self.output_dir, output_file)
 
         lines = []
@@ -358,6 +323,7 @@ $$\text{CI} = \bar{x} \pm \text{Error Bar}$$
         lines.append("  scatter_plot.png      - Scatter plot (original + synthetic)")
         lines.append("  candlestick_plot.png  - Candlestick plot with error bars")
         lines.append("  latex_output.tex      - LaTeX formatted report")
+        lines.append("  synthetic.csv         - 1000 synthetic data points")
         lines.append("  summary.txt           - This file")
         lines.append("")
 
@@ -367,25 +333,19 @@ $$\text{CI} = \bar{x} \pm \text{Error Bar}$$
         print(f"Text summary saved to: {output_file}")
 
     def run_full_analysis(self, generate_plots=True, generate_latex=True):
-        """Run complete analysis pipeline."""
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("STARTING STATISTICAL ANALYSIS")
-        print("="*70)
+        print("=" * 70)
         print(f"Output folder: {os.path.abspath(self.output_dir)}")
-        print("="*70)
+        print("=" * 70)
 
-        # Load data
         if not self.load_data():
             return False
 
-        # Calculate statistics
         self.calculate_statistics()
         self.print_statistics()
-
-        # Generate synthetic data
         self.generate_synthetic_data(n_points=1000)
 
-        # Generate all outputs into the output folder
         if generate_latex:
             self.generate_latex_output()
 
@@ -395,15 +355,14 @@ $$\text{CI} = \bar{x} \pm \text{Error Bar}$$
 
         self.save_text_summary()
 
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("ANALYSIS COMPLETE!")
         print(f"All outputs saved to: {os.path.abspath(self.output_dir)}")
-        print("="*70)
+        print("=" * 70)
         return True
 
 
 def main():
-    """Main function to run the analysis."""
     if len(sys.argv) < 2:
         print("Usage: python statistical_analysis.py <csv_file>")
         print("\nExample CSV format:")
@@ -412,23 +371,19 @@ def main():
         print("2.3,4.5")
         print("...")
 
-        # Create example CSV
-        print("\nCreating example CSV file: example_data.csv")
+        print("\nCreating example CSV file: Flight(Standard).csv")
         example_data = pd.DataFrame({
             'Temperature': np.random.normal(25, 2, 50),
             'Pressure': np.random.normal(100, 5, 50)
         })
-        example_data.to_csv('example_data.csv', index=False)
-        print("Example CSV created. Run: python statistical_analysis.py example_data.csv")
+        example_data.to_csv('Flight(Standard).csv', index=False)
+        print("Example CSV created. Run: python statistical_analysis.py Flight(Standard).csv")
         return
 
     csv_file = sys.argv[1]
-
-    # Create analyzer and run analysis
     analyzer = StatisticalAnalyzer(csv_file)
     analyzer.run_full_analysis()
 
 
 if __name__ == "__main__":
     main()
-
